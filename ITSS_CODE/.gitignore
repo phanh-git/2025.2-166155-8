@@ -1,0 +1,67 @@
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# Package files
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+
+# Crash logs
+hs_err_pid*
+
+# Build output directories
+/out/
+/build/
+/target/
+
+# Gradle
+/.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Maven
+/target/
+.mvn/
+
+# IDEs and editors
+# Eclipse
+.classpath
+.project
+.settings/
+
+# IntelliJ
+*.iml
+.idea/
+
+# VS Code
+.vscode/
+
+# NetBeans
+nbproject/private/
+nbbuild/
+nbdist/
+dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# JavaFX SDK (if placed in repo)
+javafx-sdk-*/
+
+# Temporary files
+*.tmp
+*.swp
+*.bak
+
+# Misc
+/.metadata/
+/.settings/
+
