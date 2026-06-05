@@ -1,0 +1,65 @@
+@startuml
+title Sequence Diagram 1 - Design Level
+autonumber
+
+actor "Bộ phận đặt hàng quốc tế" as A
+boundary "OverseasDashboard" as B
+control "OverseasOrderSuggestionEngine" as E
+control "OverseasOrderController" as C
+control "OverseasOrderService" as S
+entity "SiteMerchandiseRepository" as SMR
+entity "SiteRepository" as SiteR
+entity "Site" as Site
+entity "SiteMerchandise" as Stock
+entity "SiteOrder" as Order
+
+A -> B : buildRequestDetailPage(request)
+B -> B : buildPendingRequestSection(request)
+A -> B : click "Tìm kiếm hàng trong các site"
+B -> B : buildPlanningCard(request, item, state)
+B -> E : buildItemPlan(item)
+E -> SMR : findAvailableSitesForMerchandise(merchandiseCode)
+SMR --> E : List<SiteMerchandise>
+E -> SiteR : findAll()
+SiteR --> E : List<Site>
+loop từng SiteMerchandise stock
+  E -> E : bestOptionForItem(site, stock, desiredDate)
+  E -> E : add CandidateOption nếu ship/air đáp ứng
+end
+E -> E : sort candidates
+E -> E : build suggestedAllocations
+E --> B : ItemPlan(candidates, suggestedAllocations, errors)
+B -> B : buildEmptyState() nếu candidates rỗng
+B -> B : buildCandidateCard() cho từng candidate
+
+A -> B : nhập số lượng lấy từ site
+A -> B : click "Thêm vào giỏ hàng"
+B -> B : state.addAllocation(new PlannedAllocation(...))
+B -> B : refreshRequestDetailPage(request, true)
+B -> B : buildDraftSummary(request, state)
+B -> B : groupBySiteDraft()
+loop từng draft đã nhóm
+  B -> B : render summary card
+  B -> B : removeAllocation(allocation) nếu bấm "Bỏ"
+end
+
+A -> B : click "Xác nhận tạo đơn"
+B -> B : validatePlanningCoverage(request, state)
+alt còn thiếu hàng
+  B -> B : buildEmptyState("Thiếu sản phẩm ...")
+else đủ hàng
+  B -> B : handleCreateSiteOrders(request, state)
+  loop mỗi SiteDraftSummary
+    B -> C : createManualSiteOrder(...)
+    C -> S : createManualSiteOrder(...)
+    S -> SMR : (gián tiếp qua planning data)\nkhông gọi repo stock trong nhánh này
+    S -> Order : new SiteOrder()
+    S -> SOR : insertWithItems(order, orderItems)
+    S --> C : SiteOrderDTO
+    C --> B : SiteOrderDTO
+  end
+  B -> B : refreshRequestDetailPage(reloadSaleRequest(request.getId()), false)
+  B --> A : showInfo("Tạo đơn thành công")
+end
+
+@enduml

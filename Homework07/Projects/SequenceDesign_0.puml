@@ -1,0 +1,80 @@
+@startuml
+title Sequence Diagram 0 - Design Level
+autonumber
+
+actor "Bộ phận đặt hàng quốc tế" as A
+boundary "OverseasDashboard" as B
+control "OverseasOrderController" as C
+control "OverseasOrderService" as S
+entity "SaleRequestRepository" as SRR
+entity "SaleRequestItemRepository" as SIR
+entity "SiteRepository" as SiteR
+entity "SiteMerchandiseRepository" as SMR
+entity "SiteOrderRepository" as SOR
+entity "SiteOrderItemRepository" as SOIR
+entity "SiteOrder" as SO
+entity "SiteOrderItem" as SOI
+
+A -> B : buildRequestDetailPage(request)
+B -> B : buildPendingRequestSection(request)
+A -> B : click "Gợi ý đặt hàng"
+B -> B : suggestionEngine.suggest(request)
+B -> B : state.replaceWithSuggestion(suggestion)
+B -> B : refreshRequestDetailPage(reloadSaleRequest(request.getId()), true)
+B -> C : getRequestDetail(requestId)
+C --> B : SaleRequestDTO
+B -> B : buildRequestDetailPage(reloadSaleRequest(requestId))
+
+== Lập kế hoạch theo site ==
+A -> B : click "Tìm kiếm hàng trong các site"
+B -> B : buildPlanningCard(request, item, state)
+B -> B : suggestionEngine.buildItemPlan(item)
+SMR <- B : findAvailableSitesForMerchandise(merchandiseCode)
+SMR --> B : List<SiteMerchandise>
+SiteR <- B : findAll()
+SiteR --> B : List<Site>
+loop từng SiteMerchandise stock
+  B -> B : bestOptionForItem(site, stock, desiredDate)
+  B -> B : add CandidateOption
+end
+B -> B : sort candidates
+B -> B : build suggestedAllocations
+B --> A : hiển thị candidate / lỗi nếu có
+
+A -> B : nhập số lượng lấy từ các site
+A -> B : click "Thêm vào giỏ hàng"
+B -> B : state.addAllocation(new PlannedAllocation(...))
+B -> B : refreshRequestDetailPage(request, true)
+B -> B : buildDraftSummary(request, state)
+B -> B : groupBySiteDraft()
+
+== Tạo đơn ==
+A -> B : click "Xác nhận tạo đơn"
+B -> B : validatePlanningCoverage(request, state)
+alt còn thiếu hàng
+  B -> A : showError("Chưa đủ sản phẩm", missing)
+else đủ kế hoạch
+  B -> B : handleCreateSiteOrders(request, state)
+  loop mỗi SiteDraftSummary
+    B -> C : createManualSiteOrder(saleRequestId, siteCode,\ndeliveryMeans, estimatedDeliveryDate, items)
+    C -> S : createManualSiteOrder(...)
+    S -> SRR : findById(saleRequestId)
+    SRR --> S : SaleRequest
+    S -> SiteR : findByCode(siteCode)
+    SiteR --> S : Site
+    loop từng SiteOrderItemDTO
+      S -> SIR : findById(saleRequestItemId)
+      SIR --> S : SaleRequestItem
+      S -> SOI : new SiteOrderItem()
+    end
+    S -> SO : new SiteOrder()
+    S -> SOR : insertWithItems(order, orderItems)
+    S -> SRR : updateStatus(saleRequestId, IN_PROGRESS)
+    S --> C : SiteOrderDTO
+    C --> B : SiteOrderDTO
+  end
+  B -> B : refreshRequestDetailPage(reloadSaleRequest(request.getId()), false)
+  B --> A : showInfo("Tạo đơn thành công")
+end
+
+@enduml
