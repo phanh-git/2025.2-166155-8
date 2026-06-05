@@ -23,13 +23,39 @@ import java.util.*;
  */
 public class OverseasOrderService {
 
-    private final SaleRequestRepository saleRequestRepo = new SaleRequestRepository();
-    private final SaleRequestItemRepository saleRequestItemRepo = new SaleRequestItemRepository();
-    private final SiteRepository siteRepo = new SiteRepository();
-    private final SiteMerchandiseRepository siteMerchandiseRepo = new SiteMerchandiseRepository();
-    private final SiteOrderRepository siteOrderRepo = new SiteOrderRepository();
-    private final SiteOrderItemRepository siteOrderItemRepo = new SiteOrderItemRepository();
-    private final MerchandiseRepository merchandiseRepo = new MerchandiseRepository();
+    private final SaleRequestRepository saleRequestRepo;
+    private final SaleRequestItemRepository saleRequestItemRepo;
+    private final SiteRepository siteRepo;
+    private final SiteMerchandiseRepository siteMerchandiseRepo;
+    private final SiteOrderRepository siteOrderRepo;
+    private final SiteOrderItemRepository siteOrderItemRepo;
+    private final MerchandiseRepository merchandiseRepo;
+
+    public OverseasOrderService() {
+        this(new SaleRequestRepository(),
+                new SaleRequestItemRepository(),
+                new SiteRepository(),
+                new SiteMerchandiseRepository(),
+                new SiteOrderRepository(),
+                new SiteOrderItemRepository(),
+                new MerchandiseRepository());
+    }
+
+    OverseasOrderService(SaleRequestRepository saleRequestRepo,
+                         SaleRequestItemRepository saleRequestItemRepo,
+                         SiteRepository siteRepo,
+                         SiteMerchandiseRepository siteMerchandiseRepo,
+                         SiteOrderRepository siteOrderRepo,
+                         SiteOrderItemRepository siteOrderItemRepo,
+                         MerchandiseRepository merchandiseRepo) {
+        this.saleRequestRepo = saleRequestRepo;
+        this.saleRequestItemRepo = saleRequestItemRepo;
+        this.siteRepo = siteRepo;
+        this.siteMerchandiseRepo = siteMerchandiseRepo;
+        this.siteOrderRepo = siteOrderRepo;
+        this.siteOrderItemRepo = siteOrderItemRepo;
+        this.merchandiseRepo = merchandiseRepo;
+    }
 
     // ─── PROCESS SALE REQUEST ────────────────────────────────────────────────────
 
