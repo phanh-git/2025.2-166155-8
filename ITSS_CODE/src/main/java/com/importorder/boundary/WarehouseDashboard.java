@@ -40,7 +40,7 @@ public class WarehouseDashboard extends DashboardBase {
         VBox sidebar = new VBox(0);
         sidebar.getStyleClass().add("sidebar");
         sidebar.setPrefWidth(250);
-        VBox brand = brandPane("Hệ thống nhập hàng", "Quản lý kho");
+        VBox brand = brandPane("Hệ thống đặt hàng nhập khẩu", "Quản lý kho");
         VBox nav = new VBox(6);
         nav.setPadding(new Insets(18, 14, 18, 14));
         nav.getChildren().add(navButton("Quản lý đơn đặt hàng", this::buildOrdersPage));

@@ -72,7 +72,7 @@ public class OverseasDashboard extends DashboardBase {
         sidebar.getStyleClass().add("sidebar");
         sidebar.setPrefWidth(250);
 
-        VBox brand = brandPane("Hệ thống nhập hàng", "Bộ phận đặt hàng quốc tế");
+        VBox brand = brandPane("Hệ thống đặt hàng nhập khẩu", "Bộ phận đặt hàng quốc tế");
 
         VBox nav = new VBox(6);
         nav.setPadding(new Insets(18, 14, 18, 14));

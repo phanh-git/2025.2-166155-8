@@ -17,6 +17,8 @@ import javafx.geometry.Pos;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.control.TableCell;
@@ -31,7 +33,9 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 public class SalesDashboard extends DashboardBase {
@@ -89,17 +93,53 @@ public class SalesDashboard extends DashboardBase {
         createButton.setButtonType(ButtonType.RAISED);
         createButton.getStyleClass().add("btn-primary");
 
+        TextField requestCodeField = new TextField();
+        requestCodeField.setPromptText("Tìm theo mã yêu cầu...");
+        requestCodeField.getStyleClass().add("form-field");
+
+        DatePicker createdDatePicker = new DatePicker();
+        createdDatePicker.setPromptText("Chọn ngày tạo");
+        createdDatePicker.getStyleClass().add("form-field");
+
+        ComboBox<String> statusBox = new ComboBox<>();
+        statusBox.getItems().setAll(
+                "Tất cả",
+                "Đã tiếp nhận",
+                "Đã hoàn thành",
+                "Đã hủy",
+                "Đang xử lý"
+        );
+        statusBox.setValue("Tất cả");
+        statusBox.getStyleClass().add("form-field");
+        statusBox.setPrefWidth(180);
+
+        Button clearFiltersButton = new Button("Xóa bộ lọc");
+        clearFiltersButton.getStyleClass().add("btn-outline");
+
         TableView<SaleRequestDTO> requestTable = buildRequestTable();
+
+        List<SaleRequestDTO>[] allRequestsRef = new List[]{new ArrayList<>()};
+
+        Runnable applyFilters = () -> {
+            List<SaleRequestDTO> filteredRequests = allRequestsRef[0].stream()
+                    .filter(request -> matchesRequestCode(request, requestCodeField.getText()))
+                    .filter(request -> matchesCreatedDate(request, createdDatePicker.getValue()))
+                    .filter(request -> matchesStatus(request, statusBox.getValue()))
+                    .toList();
+            requestTable.setItems(FXCollections.observableArrayList(filteredRequests));
+            requestTable.setPrefHeight(Math.max(180, 58 + filteredRequests.size() * 46.0));
+        };
 
         Runnable loadRequests = () -> {
             try {
                 List<SaleRequestDTO> requests = saleRequestController.getMyRequests();
-                requestTable.setItems(FXCollections.observableArrayList(requests));
-                requestTable.setPrefHeight(Math.max(180, 58 + requests.size() * 46.0));
+                allRequestsRef[0] = requests;
                 totalValue.setText(String.valueOf(requests.size()));
                 completedValue.setText(String.valueOf(countByStatus(requests, SaleRequest.Status.SUCCESS)));
                 processingValue.setText(String.valueOf(countProcessingRequests(requests)));
+                applyFilters.run();
             } catch (SQLException ex) {
+                allRequestsRef[0] = new ArrayList<>();
                 requestTable.setItems(FXCollections.observableArrayList());
                 totalValue.setText("0");
                 completedValue.setText("0");
@@ -107,6 +147,16 @@ public class SalesDashboard extends DashboardBase {
                 showError("Không tải được dữ liệu", ex.getMessage());
             }
         };
+
+        requestCodeField.textProperty().addListener((obs, oldValue, newValue) -> applyFilters.run());
+        createdDatePicker.valueProperty().addListener((obs, oldValue, newValue) -> applyFilters.run());
+        statusBox.valueProperty().addListener((obs, oldValue, newValue) -> applyFilters.run());
+        clearFiltersButton.setOnAction(e -> {
+            requestCodeField.clear();
+            createdDatePicker.setValue(null);
+            statusBox.setValue("Tất cả");
+            applyFilters.run();
+        });
 
         createButton.setOnAction(e -> {
             SaleRequestFormDialog dialog = new SaleRequestFormDialog(stage, new com.importorder.repository.MerchandiseRepository());
@@ -123,9 +173,13 @@ public class SalesDashboard extends DashboardBase {
             });
         });
 
+        HBox filterRow = new HBox(10, requestCodeField, createdDatePicker, statusBox, clearFiltersButton);
+        filterRow.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(requestCodeField, Priority.ALWAYS);
+
         VBox heroCard = new VBox(16);
         heroCard.getStyleClass().add("hero-card");
-        heroCard.getChildren().addAll(stats, createButton);
+        heroCard.getChildren().addAll(stats, createButton, filterRow);
 
         page.getChildren().addAll(heroCard, requestTable);
         loadRequests.run();
@@ -473,6 +527,36 @@ public class SalesDashboard extends DashboardBase {
         return (int) requests.stream()
                 .filter(request -> request.getStatus() == status)
                 .count();
+    }
+
+    private boolean matchesRequestCode(SaleRequestDTO request, String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return true;
+        }
+        String normalizedKeyword = keyword.trim().toLowerCase();
+        String requestId = String.valueOf(request.getId());
+        return requestId.contains(normalizedKeyword)
+                || ("#" + requestId).toLowerCase().contains(normalizedKeyword);
+    }
+
+    private boolean matchesCreatedDate(SaleRequestDTO request, LocalDate selectedDate) {
+        if (selectedDate == null) {
+            return true;
+        }
+        return request.getCreatedAt() != null && selectedDate.equals(request.getCreatedAt().toLocalDate());
+    }
+
+    private boolean matchesStatus(SaleRequestDTO request, String selectedStatus) {
+        if (selectedStatus == null || selectedStatus.isBlank() || "Tất cả".equals(selectedStatus)) {
+            return true;
+        }
+        return switch (selectedStatus) {
+            case "Đã tiếp nhận" -> request.getStatus() == SaleRequest.Status.RECEIVED;
+            case "Đã hoàn thành" -> request.getStatus() == SaleRequest.Status.SUCCESS;
+            case "Đã hủy" -> request.getStatus() == SaleRequest.Status.CANCELLED;
+            case "Đang xử lý" -> request.getStatus() == SaleRequest.Status.IN_PROGRESS;
+            default -> true;
+        };
     }
 
     private int countProcessingRequests(List<SaleRequestDTO> requests) {

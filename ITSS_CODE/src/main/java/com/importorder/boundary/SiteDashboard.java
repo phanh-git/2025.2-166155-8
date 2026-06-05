@@ -60,7 +60,7 @@ public class SiteDashboard extends DashboardBase {
         sidebar.getStyleClass().add("sidebar");
         sidebar.setPrefWidth(250);
 
-        VBox brand = brandPane("Hệ thống nhập hàng", "Quản lý site");
+        VBox brand = brandPane("Hệ thống đặt hàng nhập khẩu", "Quản lý site");
         VBox nav = new VBox(6);
         nav.setPadding(new Insets(18, 14, 18, 14));
         nav.getChildren().addAll(
