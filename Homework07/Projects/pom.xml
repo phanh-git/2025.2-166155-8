@@ -74,7 +74,6 @@
     </dependencies>
 
     <build>
-        <testSourceDirectory>${project.basedir}/20235858</testSourceDirectory>
         <plugins>
             <!-- JavaFX Maven Plugin – dùng để chạy: mvn javafx:run -->
             <plugin>
