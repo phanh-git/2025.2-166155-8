@@ -23,7 +23,7 @@ Project Java demo 6 use case:
 1. Mo PowerShell va chuyen vao thu muc du an:
 
 ```powershell
-cd .\ITSS_CODE
+cd .\Homework07\Projects
 ```
 
 2. Xay dung va cho phep JavaFX:

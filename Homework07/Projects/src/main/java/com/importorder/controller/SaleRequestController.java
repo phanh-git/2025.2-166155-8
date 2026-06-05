@@ -22,10 +22,18 @@ import java.util.List;
  */
 public class SaleRequestController {
 
-    private final SaleRequestService saleRequestService = new SaleRequestService();
+    private final SaleRequestService saleRequestService;
 
     /** User đang đăng nhập, được set từ LoginController sau khi xác thực */
     private User currentUser;
+
+    public SaleRequestController() {
+        this(new SaleRequestService());
+    }
+
+    public SaleRequestController(SaleRequestService saleRequestService) {
+        this.saleRequestService = saleRequestService;
+    }
 
     // ─── INJECT ─────────────────────────────────────────────────────────────────
 
